@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import './login-style.css';
-import $ from 'jquery';
-;
+var firebase = require('firebase');
+
 
 class Login extends Component {
     constructor(props) {
@@ -15,38 +15,25 @@ class Login extends Component {
 
         this.handleInputChange = this.handleInputChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
+
+
   }
 
     handleSubmit(event) {
-        sessionStorage.setItem('email', this.state.email);
-
-        
 
         event.preventDefault();
 
-        $.ajax({
-            url: "https://oliver45.000webhostapp.com/check_login.php",
-            method: "POST",
-            header: {
-                'Access-Control-Allow-Origin':"*",
-                'Access-Control-Allow-Methods':"GET,PUT,POST,DELETE",
-                'Access-Control-Allow-Headers': 'Content-Type'
-             } ,
-            data: {username: this.state.email, password: this.state.password},
-            dataType: 'json',
-            success:(respuesta)=> {
-                 //eslint-disable-next-line
-                if(respuesta.msg = "OK"){
-                    this.props.history.push('/main')
+        firebase.auth().signInWithEmailAndPassword(this.state.email, this.state.password).then((result)=>{
 
-                }
-            },
-            error:(respuesta)=>{
-
-
-
-            }
+                sessionStorage.setItem('email', this.state.email);
+                this.props.history.push('/main');
         });
+
+        if (firebase.auth().currentUser !== null) {
+            sessionStorage.setItem('id', firebase.auth().currentUser.uid);
+            console.log(firebase.auth().currentUser.uid);
+        }
+
     }
 
     handleInputChange(event) {

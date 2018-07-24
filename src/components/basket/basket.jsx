@@ -1,21 +1,59 @@
 import React, { Component } from 'react';
 import './basket-style.css';
-import $ from 'jquery';
+
+var firebase = require('firebase');
 
 class Basket extends Component {
     constructor(props) {
         super(props);
         this.state = {
             objetos: [],
-            carrito: 0,
-            email: sessionStorage.getItem('email'),
-            total: 0
+            carritoId:[],
+            carrito:  sessionStorage.getItem('carrito'),
+            currentId: sessionStorage.getItem('id'),
+            total: 0,
+
 
         };
 
         this.pagar = this.pagar.bind(this);
         this.cancelar = this.cancelar.bind(this);
 
+
+
+        var basket = firebase.database().ref("basket");
+        basket.orderByChild("user_id").equalTo(this.state.currentId).on('value', (snapshot) => {
+
+
+
+            try{
+                this.setState({
+                    carritoId: this.state.carritoId.concat(Object.keys(snapshot.val()))
+                })
+            }catch(err){
+
+            }
+
+
+
+
+
+
+          snapshot.forEach ( (data) => {
+
+              this.setState({
+                  objetos: this.state.objetos.concat(data.val()),
+                  total: this.state.total + parseInt(data.val().subTotal,10)
+
+              })
+
+        });
+
+
+
+        });
+
+        /*
         $.ajax({
             url: "https://oliver45.000webhostapp.com/obtener_carrito.php",
             method: "POST",
@@ -33,7 +71,7 @@ class Basket extends Component {
                     for(let i=0; i<respuesta.objetos.length;i++){
 
                         this.setState({
-                            objetos: this.state.objetos.concat([respuesta.objetos[i]]),
+                            objetos: this.state.objetos.concat(respuesta.objetos[i]),
                             total: this.state.total + parseInt(respuesta.objetos[i].subtotal,10)
                         })
                     }
@@ -48,37 +86,50 @@ class Basket extends Component {
             }
         });
 
+        */
 
     }
 
     cancelar(event){
-        $.ajax({
-            url: "https://oliver45.000webhostapp.com/cancelar_carrito.php",
-            method: "POST",
-            header: {
-                'Access-Control-Allow-Origin':"*",
-                'Access-Control-Allow-Methods':"GET,PUT,POST,DELETE",
-                'Access-Control-Allow-Headers': 'Content-Type'
-             } ,
-             dataType: 'json',
-            data: {username: this.state.email},
-            success:(respuesta)=> {
 
-                if(respuesta.msg === "OK"){
+        for(var i=0; i<this.state.carritoId.length; i++){
+            var basket = firebase.database().ref("basket");
+            basket.child(this.state.carritoId[i]).remove();
 
-                this.comprados = 0;
-                this.props.history.push('/main')
 
-                }else{
-                    alert("Error del servidor");
 
-                }
-            }
-        });
+        }
+        this.setState({
+            carrito: 0
+        })
+        this.props.history.push('/main')
+
+
+
 
       }
 
       pagar(event){
+          this.state.objetos.forEach((objeto)=>{
+              var restantes = parseInt(objeto.restantes,10)-parseInt(objeto.cantidad,10)
+              var tienda = firebase.database().ref("tienda/"+objeto.producto);
+              tienda.update({ cantidad: restantes });
+          })
+
+
+
+          for(var i=0; i<this.state.carritoId.length; i++){
+              var basket = firebase.database().ref("basket");
+              basket.child(this.state.carritoId[i]).remove();
+              console.log(this.state.carritoId[i]);
+          }
+
+          this.setState({
+              carrito: 0
+          })
+          this.props.history.push('/main')
+
+          /*
           $.ajax({
               url: "https://oliver45.000webhostapp.com/pagar_carrito.php",
               method: "POST",
@@ -104,6 +155,7 @@ class Basket extends Component {
                   }
               }
           });
+          */
 
       }
 
@@ -120,7 +172,7 @@ class Basket extends Component {
                         <h4><b className="name-card">{element.nombre}</b></h4>
                         <p className="precio">Precio: {element.precio}</p>
                         <p className="precio">cantidad: {element.cantidad}</p>
-                        <p className="precio">Sub Total: {element.subtotal}</p>
+                        <p className="precio">Sub Total: {element.subTotal}</p>
                     </div>
                     <hr className="division-card"/>
                 </div>

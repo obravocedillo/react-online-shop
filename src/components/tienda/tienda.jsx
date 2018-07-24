@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
 import './tienda-style.css';
-import $ from 'jquery';
+var firebase = require('firebase');
+
+
+
 
 
 
@@ -12,8 +15,10 @@ class Tienda extends Component {
         this.state = {
             objetos: [],
             carrito: 0,
-            email: sessionStorage.getItem('email'),
-            comprados: 0
+            userId: sessionStorage.getItem('id'),
+            comprados: 0,
+            busqueda:''
+
 
 
 
@@ -21,40 +26,21 @@ class Tienda extends Component {
 
             this.actualizarCarrito = this.actualizarCarrito.bind(this);
             this.submitCarrito = this.submitCarrito.bind(this);
+            this.buscador = this.buscador.bind(this);
 
 
+            var tienda = firebase.database().ref('tienda');
 
-              $.ajax({
-                  url: "https://oliver45.000webhostapp.com/obtener_tienda.php",
-                  method: "POST",
-                  header: {
-                      'Access-Control-Allow-Origin':"*",
-                      'Access-Control-Allow-Methods':"GET,PUT,POST,DELETE",
-                      'Access-Control-Allow-Headers': 'Content-Type'
-                   } ,
-                   dataType: 'json',
-                  data: {username:this.state.email},
-                  success:(respuesta)=> {
+            tienda.on('child_added', (snapshot) => {
 
-                      if(respuesta.msg === "OK"){
+              this.setState({
+                  objetos: this.state.objetos.concat(snapshot.val())
 
-                          for(let i=0; i<respuesta.objetos.length;i++){
+              })
 
-                              //this.state.objetos.push(respuesta.objetos[i]);
-                              this.setState({
-                                  objetos: this.state.objetos.concat([respuesta.objetos[i]])
-                              })
-                          }
-
-                          this.state.comprados = 0;
-
-                      }else{
-                          alert("Error del servidor");
-                      }
+            });
 
 
-                  }
-              });
     }
 
     actualizarCarrito(event){
@@ -65,6 +51,7 @@ class Tienda extends Component {
 
         this.setState({
             comprados: value
+
         });
 
 
@@ -82,6 +69,10 @@ class Tienda extends Component {
         var tempCantidad;
         var tempNombre;
         var tempImagen;
+        var objetoCarrito;
+        var tempRestantes;
+
+
 
         var nombreCurrentId = event.target.id;
 
@@ -92,43 +83,67 @@ class Tienda extends Component {
                 tempPrecio = this.state.objetos[i].precio;
                 tempNombre = this.state.objetos[i].nombre;
                 tempImagen = this.state.objetos[i].imagen;
-                tempId = this.state.objetos[i].id;
+                tempId = this.state.objetos[i].id_objeto;
+                tempRestantes = this.state.objetos[i].cantidad;
                 tempCantidad = event.target[1].valueAsNumber;
+
+                 objetoCarrito = {
+                    user_id: this.state.userId,
+                    producto: tempNombre,
+                    producto_id: tempId,
+                    precio: tempPrecio,
+                    cantidad: tempCantidad,
+                    imagen: tempImagen,
+                    subTotal: parseInt(tempPrecio,10)*parseInt(tempCantidad,10),
+                    restantes:tempRestantes
+                };
+
+
+
+
+
+
             }
         }
 
-        console.log(tempId);
-        console.log(tempImagen);
-        console.log(tempNombre);
-        console.log(tempPrecio);
-        console.log(tempCantidad)
 
-        $.ajax({
-            url: "https://oliver45.000webhostapp.com/agregar_carrito.php",
-            method: "POST",
-            header: {
-                'Access-Control-Allow-Origin':"*",
-                'Access-Control-Allow-Methods':"GET,PUT,POST,DELETE",
-                'Access-Control-Allow-Headers': 'Content-Type'
-             } ,
-             dataType: 'json',
-            data: {
-                username: this.state.email,
-                id: tempId,
-                precio: tempPrecio,
-                cantidad: this.state.comprados,
-                nombre: tempNombre,
-                imagen: tempImagen
-            },
-            success:(respuesta)=> {
-                this.setState({
-                    carrito: parseInt(this.state.carrito,10) + parseInt(this.state.comprados,10)
-                })
-
-
-            }
+        this.setState({
+            carrito: parseInt(this.state.carrito,10) + parseInt(this.state.comprados,10)
 
         });
+
+
+        sessionStorage.setItem('carrito', this.state.carrito);
+
+
+        var basket = firebase.database().ref("basket");
+        basket.push(objetoCarrito);
+
+    }
+
+    buscador(event){
+
+        event.preventDefault();
+        this.state.objetos = [];
+
+        const target = event.target;
+        const value = target.value;
+        
+
+        this.setState({
+            busqueda: value
+        });
+            var tienda = firebase.database().ref('tienda');
+            tienda.orderByChild('nombre').startAt(value).endAt(value+"\uf8ff").on('value',  (snapshot) => {
+
+                snapshot.forEach((dato)=>{
+                    this.state.objetos.push(dato.val());
+                })
+
+                console.log(this.state.objetos);
+
+            }
+        )
 
 
     }
@@ -140,6 +155,7 @@ class Tienda extends Component {
 
 
       const accordionChildren = [];
+
 
         this.state.objetos.forEach((element)=>{
 
@@ -153,7 +169,7 @@ class Tienda extends Component {
                         <div className="comprar">
                         <form onSubmit={(e) => {this.submitCarrito(e)}} id={element.nombre}>
                             <button type="submit">Comprar</button>
-                            <input type="number" placeholder="cantidad a comprar"  min="0"          max={element.cantidad}  onChange={this.actualizarCarrito} />
+                            <input type="number" placeholder="cantidad a comprar"  min="0" max={element.cantidad}  onChange={this.actualizarCarrito} />
                         </form>
                         </div>
                     </div>
@@ -190,7 +206,7 @@ class Tienda extends Component {
                     <div className="busqueda">
                         <form className="buscador" >
                             <h2>Qué estas buscando</h2>
-                            <input type="text" placeholder="Search.." name="search"/>
+                            <input type="text" placeholder="Search.."  value={this.state.busqueda} onChange={this.buscador}/>
 
                         </form>
                     </div>
