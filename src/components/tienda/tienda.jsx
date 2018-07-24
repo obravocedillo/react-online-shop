@@ -128,7 +128,7 @@ class Tienda extends Component {
 
         const target = event.target;
         const value = target.value;
-        
+
 
         this.setState({
             busqueda: value
@@ -140,7 +140,7 @@ class Tienda extends Component {
                     this.state.objetos.push(dato.val());
                 })
 
-                console.log(this.state.objetos);
+                
 
             }
         )

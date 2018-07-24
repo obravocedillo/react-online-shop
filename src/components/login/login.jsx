@@ -31,7 +31,7 @@ class Login extends Component {
 
         if (firebase.auth().currentUser !== null) {
             sessionStorage.setItem('id', firebase.auth().currentUser.uid);
-            console.log(firebase.auth().currentUser.uid);
+            
         }
 
     }

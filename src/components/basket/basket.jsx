@@ -53,40 +53,6 @@ class Basket extends Component {
 
         });
 
-        /*
-        $.ajax({
-            url: "https://oliver45.000webhostapp.com/obtener_carrito.php",
-            method: "POST",
-            header: {
-                'Access-Control-Allow-Origin':"*",
-                'Access-Control-Allow-Methods':"GET,PUT,POST,DELETE",
-                'Access-Control-Allow-Headers': 'Content-Type'
-             } ,
-             dataType: 'json',
-            data: {username: this.state.email},
-            success:(respuesta)=> {
-
-                if(respuesta.msg === "OK"){
-
-                    for(let i=0; i<respuesta.objetos.length;i++){
-
-                        this.setState({
-                            objetos: this.state.objetos.concat(respuesta.objetos[i]),
-                            total: this.state.total + parseInt(respuesta.objetos[i].subtotal,10)
-                        })
-                    }
-
-                    this.state.comprados = 0;
-
-                }else{
-                    alert("Error del servidor");
-                }
-
-
-            }
-        });
-
-        */
 
     }
 
@@ -121,7 +87,7 @@ class Basket extends Component {
           for(var i=0; i<this.state.carritoId.length; i++){
               var basket = firebase.database().ref("basket");
               basket.child(this.state.carritoId[i]).remove();
-              console.log(this.state.carritoId[i]);
+
           }
 
           this.setState({
@@ -129,33 +95,7 @@ class Basket extends Component {
           })
           this.props.history.push('/main')
 
-          /*
-          $.ajax({
-              url: "https://oliver45.000webhostapp.com/pagar_carrito.php",
-              method: "POST",
-              header: {
-                  'Access-Control-Allow-Origin':"*",
-                  'Access-Control-Allow-Methods':"GET,PUT,POST,DELETE",
-                  'Access-Control-Allow-Headers': 'Content-Type'
-               } ,
-               dataType: 'json',
-              data: {
-                  username: this.state.email,
-                  objetos: this.state.objetos
-              },
-              success:(respuesta)=> {
-
-                  if(respuesta.msg === "OK"){
-                      this.props.history.push('/main')
-                      this.comprados = 0;
-
-                  }else{
-                      alert("Error del servidor");
-
-                  }
-              }
-          });
-          */
+        
 
       }
 
